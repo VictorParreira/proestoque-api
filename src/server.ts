@@ -2,6 +2,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 
+import { healthRoutes } from "./routes/health.routes";
+
 dotenv.config();
 
 const app = express();
@@ -9,14 +11,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const port = Number(process.env.PORT) || 3333;
+app.use("/health", healthRoutes);
 
-app.get("/health", (_request, response) => {
-  return response.status(200).json({
-    status: "ok",
-    service: "proestoque-api",
-  });
-});
+const port = Number(process.env.PORT) || 3333;
 
 app.listen(port, () => {
   console.log(`API running on http://localhost:${port}`);

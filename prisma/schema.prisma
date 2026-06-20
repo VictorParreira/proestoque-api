@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  senhaHash String?
+  criadoEm  DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
+model Categoria {
+  id         String    @id
+  nome       String
+  icone      String
+  colorToken String
+  produtos   Produto[]
+  criadoEm   DateTime  @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@index([nome])
+}
+
+model Produto {
+  id                String   @id @default(cuid())
+  nome              String
+  categoriaId       String
+  quantidade        Int
+  quantidadeMinima  Int
+  preco             Float
+  unidade           String
+  foto              String?
+  ultimaMovimentacao DateTime @default(now())
+  criadoEm          DateTime @default(now())
+  atualizadoEm      DateTime @updatedAt
+
+  categoria Categoria @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+
+  @@index([categoriaId])
+  @@index([nome])
+}
