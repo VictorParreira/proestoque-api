@@ -1,20 +1,23 @@
-import cors from "cors";
 import dotenv from "dotenv";
-import express from "express";
 
-import { healthRoutes } from "./routes/health.routes";
+import { app } from "./app";
+import { prisma } from "./prisma/client";
 
 dotenv.config();
 
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-
-app.use("/health", healthRoutes);
-
 const port = Number(process.env.PORT) || 3333;
 
-app.listen(port, () => {
-  console.log(`API running on http://localhost:${port}`);
-});
+async function startServer() {
+  try {
+    await prisma.$connect();
+
+    app.listen(port, () => {
+      console.log(`API running on http://localhost:${port}`);
+    });
+  } catch (error) {
+    console.error("Erro ao iniciar o servidor:", error);
+    process.exit(1);
+  }
+}
+
+void startServer();
