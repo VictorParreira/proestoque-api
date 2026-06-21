@@ -207,29 +207,37 @@ export async function atualizarProduto(
 
     const data = resultado.data;
 
-    if (data.categoriaId) {
-      await ensureCategoriaExists(data.categoriaId);
-    }
+if (
+  data.quantidade !== undefined &&
+  data.quantidade !== produtoExistente.quantidade
+) {
+  throw new AppError(
+    "A quantidade deve ser alterada por movimentação de estoque",
+    400,
+  );
+}
+
+if (data.categoriaId) {
+  await ensureCategoriaExists(data.categoriaId);
+}
 
     const produto = await prisma.produto.update({
       where: {
         id,
       },
       data: {
-        nome: data.nome,
-        categoriaId: data.categoriaId,
-        quantidade: data.quantidade,
-        quantidadeMinima: data.quantidadeMinima,
-        preco: data.preco,
-        unidade: data.unidade,
-        foto:
-  data.foto === null
-    ? null
-    : data.foto?.trim()
-      ? data.foto
-      : undefined,
-        ultimaMovimentacao: new Date(),
-      },
+  nome: data.nome,
+  categoriaId: data.categoriaId,
+  quantidadeMinima: data.quantidadeMinima,
+  preco: data.preco,
+  unidade: data.unidade,
+  foto:
+    data.foto === null
+      ? null
+      : data.foto?.trim()
+        ? data.foto
+        : undefined,
+},
       include: {
         categoria: true,
       },
