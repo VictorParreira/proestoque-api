@@ -2,10 +2,12 @@ import type { NextFunction, Request, Response } from "express";
 
 export class AppError extends Error {
   public readonly statusCode: number;
+  public readonly detalhes?: unknown;
 
-  constructor(message: string, statusCode = 400) {
+  constructor(message: string, statusCode = 400, detalhes?: unknown) {
     super(message);
     this.statusCode = statusCode;
+    this.detalhes = detalhes;
   }
 }
 
@@ -24,6 +26,7 @@ export function errorHandler(
   if (error instanceof AppError) {
     return response.status(error.statusCode).json({
       erro: error.message,
+      ...(error.detalhes ? { detalhes: error.detalhes } : {}),
     });
   }
 

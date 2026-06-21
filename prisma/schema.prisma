@@ -8,11 +8,11 @@ datasource db {
 }
 
 model Usuario {
-  id        String   @id @default(cuid())
-  nome      String
-  email     String   @unique
-  senhaHash String?
-  criadoEm  DateTime @default(now())
+  id           String   @id @default(cuid())
+  nome         String
+  email        String   @unique
+  senhaHash    String
+  criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 }
 
