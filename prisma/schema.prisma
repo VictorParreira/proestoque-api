@@ -29,20 +29,36 @@ model Categoria {
 }
 
 model Produto {
-  id                String   @id @default(cuid())
-  nome              String
-  categoriaId       String
-  quantidade        Int
-  quantidadeMinima  Int
-  preco             Float
-  unidade           String
-  foto              String?
-  ultimaMovimentacao DateTime @default(now())
-  criadoEm          DateTime @default(now())
-  atualizadoEm      DateTime @updatedAt
+  id                 String         @id @default(cuid())
+  nome               String
+  categoriaId        String
+  quantidade         Int
+  quantidadeMinima   Int
+  preco              Float
+  unidade            String
+  foto               String?
+  ultimaMovimentacao DateTime       @default(now())
+  criadoEm           DateTime       @default(now())
+  atualizadoEm       DateTime       @updatedAt
 
-  categoria Categoria @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+  categoria     Categoria      @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+  movimentacoes Movimentacao[]
 
   @@index([categoriaId])
   @@index([nome])
+}
+
+model Movimentacao {
+  id          String   @id @default(cuid())
+  produtoId   String
+  tipo        String
+  quantidade  Int
+  observacao  String?
+  criadaEm    DateTime @default(now())
+
+  produto Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+
+  @@index([produtoId])
+  @@index([tipo])
+  @@index([criadaEm])
 }
