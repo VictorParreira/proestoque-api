@@ -47,7 +47,7 @@ const produtoBaseSchema = z.object({
     message: "Selecione uma unidade válida",
   }),
 
-  foto: z.string().trim().optional(),
+  foto: z.string().trim().nullable().optional(),
 });
 
 const criarProdutoSchema = produtoBaseSchema;
@@ -156,7 +156,12 @@ export async function criarProduto(
         quantidadeMinima: data.quantidadeMinima,
         preco: data.preco,
         unidade: data.unidade,
-        foto: data.foto?.trim() ? data.foto : undefined,
+        foto:
+  data.foto === null
+    ? null
+    : data.foto?.trim()
+      ? data.foto
+      : undefined,
       },
       include: {
         categoria: true,
@@ -217,7 +222,12 @@ export async function atualizarProduto(
         quantidadeMinima: data.quantidadeMinima,
         preco: data.preco,
         unidade: data.unidade,
-        foto: data.foto?.trim() ? data.foto : undefined,
+        foto:
+  data.foto === null
+    ? null
+    : data.foto?.trim()
+      ? data.foto
+      : undefined,
         ultimaMovimentacao: new Date(),
       },
       include: {
