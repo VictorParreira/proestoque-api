@@ -1,5 +1,6 @@
 import { Router } from "express";
 
+import { authRoutes } from "./auth.routes";
 import { categoriaRoutes } from "./categoria.routes";
 import { produtoRoutes } from "./produto.routes";
 
@@ -12,5 +13,6 @@ routes.get("/health", (_request, response) => {
   });
 });
 
+routes.use("/auth", authRoutes);
 routes.use("/categorias", categoriaRoutes);
 routes.use("/produtos", produtoRoutes);

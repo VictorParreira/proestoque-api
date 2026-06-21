@@ -11,8 +11,11 @@ import {
   deletarProduto,
   listarProdutos,
 } from "../controllers/produto.controller";
+import { autenticar } from "../middlewares/auth";
 
 export const produtoRoutes = Router();
+
+produtoRoutes.use(autenticar);
 
 produtoRoutes.get("/", listarProdutos);
 produtoRoutes.post("/", criarProduto);
