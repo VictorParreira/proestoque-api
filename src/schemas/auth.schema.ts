@@ -42,5 +42,15 @@ export const loginSchema = z.object({
     .min(1, "A senha é obrigatória"),
 });
 
+export const refreshTokenSchema = z.object({
+  refreshToken: z
+    .string({
+      message: "O refresh token é obrigatório",
+    })
+    .trim()
+    .min(1, "O refresh token é obrigatório"),
+});
+
 export type RegistroInput = z.infer<typeof registroSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;

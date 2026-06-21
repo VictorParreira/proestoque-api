@@ -1,15 +1,23 @@
 import bcrypt from "bcrypt";
 import type { NextFunction, Request, Response } from "express";
-import jwt, { type SignOptions } from "jsonwebtoken";
+import jwt, { type JwtPayload, type SignOptions } from "jsonwebtoken";
 
 import { config } from "../config";
 import { AppError } from "../middlewares/errorHandler";
 import { prisma } from "../prisma/client";
-import type { LoginInput, RegistroInput } from "../schemas/auth.schema";
+import type {
+  LoginInput,
+  RefreshTokenInput,
+  RegistroInput,
+} from "../schemas/auth.schema";
 
 const BCRYPT_SALT_ROUNDS = 10;
 
-function gerarToken(usuarioId: string) {
+type AuthTokenPayload = JwtPayload & {
+  sub: string;
+};
+
+function gerarAccessToken(usuarioId: string) {
   const signOptions: SignOptions = {
     expiresIn: config.jwtExpiresIn as SignOptions["expiresIn"],
   };
@@ -21,6 +29,42 @@ function gerarToken(usuarioId: string) {
     config.jwtSecret,
     signOptions,
   );
+}
+
+function gerarRefreshToken(usuarioId: string) {
+  const signOptions: SignOptions = {
+    expiresIn: config.jwtRefreshExpiresIn as SignOptions["expiresIn"],
+  };
+
+  return jwt.sign(
+    {
+      sub: usuarioId,
+    },
+    config.jwtRefreshSecret,
+    signOptions,
+  );
+}
+
+async function criarSessao(usuarioId: string) {
+  const accessToken = gerarAccessToken(usuarioId);
+  const refreshToken = gerarRefreshToken(usuarioId);
+  const refreshTokenHash = await bcrypt.hash(refreshToken, BCRYPT_SALT_ROUNDS);
+
+  const usuario = await prisma.usuario.update({
+    where: {
+      id: usuarioId,
+    },
+    data: {
+      refreshTokenHash,
+    },
+  });
+
+  return {
+    usuario,
+    token: accessToken,
+    accessToken,
+    refreshToken,
+  };
 }
 
 function formatarUsuario(usuario: {
@@ -37,6 +81,20 @@ function formatarUsuario(usuario: {
     criadoEm: usuario.criadoEm,
     atualizadoEm: usuario.atualizadoEm,
   };
+}
+
+function validarRefreshToken(refreshToken: string) {
+  try {
+    const decoded = jwt.verify(refreshToken, config.jwtRefreshSecret);
+
+    if (typeof decoded === "string" || !decoded.sub) {
+      throw new AppError("Refresh token inválido", 401);
+    }
+
+    return decoded as AuthTokenPayload;
+  } catch {
+    throw new AppError("Refresh token inválido", 401);
+  }
 }
 
 export async function registrar(
@@ -67,11 +125,13 @@ export async function registrar(
       },
     });
 
-    const token = gerarToken(usuario.id);
+    const sessao = await criarSessao(usuario.id);
 
     return response.status(201).json({
-      usuario: formatarUsuario(usuario),
-      token,
+      usuario: formatarUsuario(sessao.usuario),
+      token: sessao.token,
+      accessToken: sessao.accessToken,
+      refreshToken: sessao.refreshToken,
     });
   } catch (error) {
     return next(error);
@@ -102,11 +162,55 @@ export async function login(
       throw new AppError("E-mail ou senha inválidos", 401);
     }
 
-    const token = gerarToken(usuario.id);
+    const sessao = await criarSessao(usuario.id);
 
     return response.status(200).json({
-      usuario: formatarUsuario(usuario),
-      token,
+      usuario: formatarUsuario(sessao.usuario),
+      token: sessao.token,
+      accessToken: sessao.accessToken,
+      refreshToken: sessao.refreshToken,
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function refresh(
+  request: Request<unknown, unknown, RefreshTokenInput>,
+  response: Response,
+  next: NextFunction,
+) {
+  try {
+    const { refreshToken } = request.body;
+
+    const payload = validarRefreshToken(refreshToken);
+
+    const usuario = await prisma.usuario.findUnique({
+      where: {
+        id: payload.sub,
+      },
+    });
+
+    if (!usuario || !usuario.refreshTokenHash) {
+      throw new AppError("Refresh token inválido", 401);
+    }
+
+    const refreshTokenValido = await bcrypt.compare(
+      refreshToken,
+      usuario.refreshTokenHash,
+    );
+
+    if (!refreshTokenValido) {
+      throw new AppError("Refresh token inválido", 401);
+    }
+
+    const sessao = await criarSessao(usuario.id);
+
+    return response.status(200).json({
+      usuario: formatarUsuario(sessao.usuario),
+      token: sessao.token,
+      accessToken: sessao.accessToken,
+      refreshToken: sessao.refreshToken,
     });
   } catch (error) {
     return next(error);

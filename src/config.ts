@@ -19,4 +19,6 @@ export const config = {
   databaseUrl: getEnvVar("DATABASE_URL"),
   jwtSecret: getEnvVar("JWT_SECRET"),
   jwtExpiresIn: getEnvVar("JWT_EXPIRES_IN"),
+  jwtRefreshSecret: getEnvVar("JWT_REFRESH_SECRET"),
+  jwtRefreshExpiresIn: getEnvVar("JWT_REFRESH_EXPIRES_IN"),
 } as const;
