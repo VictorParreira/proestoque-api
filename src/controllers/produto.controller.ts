@@ -52,12 +52,14 @@ const produtoBaseSchema = z.object({
 
 const criarProdutoSchema = produtoBaseSchema;
 
-const atualizarProdutoSchema = produtoBaseSchema.partial().refine(
-  (data) => Object.keys(data).length > 0,
-  {
+const atualizarProdutoSchema = produtoBaseSchema
+  .omit({
+    quantidade: true,
+  })
+  .partial()
+  .refine((data) => Object.keys(data).length > 0, {
     message: "Informe pelo menos um campo para atualizar",
-  },
-);
+  });
 
 function getParamId(request: Request) {
   const rawId = request.params.id;
@@ -196,6 +198,17 @@ export async function atualizarProduto(
       throw new AppError("Produto não encontrado", 404);
     }
 
+    if (
+  typeof request.body === "object" &&
+  request.body !== null &&
+  "quantidade" in request.body
+) {
+  throw new AppError(
+    "A quantidade deve ser alterada por movimentação de estoque",
+    400,
+  );
+}
+
     const resultado = atualizarProdutoSchema.safeParse(request.body);
 
     if (!resultado.success) {
@@ -206,16 +219,6 @@ export async function atualizarProduto(
     }
 
     const data = resultado.data;
-
-if (
-  data.quantidade !== undefined &&
-  data.quantidade !== produtoExistente.quantidade
-) {
-  throw new AppError(
-    "A quantidade deve ser alterada por movimentação de estoque",
-    400,
-  );
-}
 
 if (data.categoriaId) {
   await ensureCategoriaExists(data.categoriaId);
